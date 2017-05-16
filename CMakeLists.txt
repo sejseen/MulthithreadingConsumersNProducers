@@ -4,5 +4,5 @@ project(MulthithreadingConsumersNProducers)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -pthread")
 
-set(SOURCE_FILES main.cpp)
+set(SOURCE_FILES main.cpp WorkerService.cpp WorkerService.h QueueStructure.cpp QueueStructure.h Process.h)
 add_executable(MulthithreadingConsumersNProducers ${SOURCE_FILES})
