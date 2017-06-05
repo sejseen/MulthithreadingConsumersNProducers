@@ -5,7 +5,8 @@
 #include "WorkerService.h"
 #include "QueueStructure.h"
 #include "Process.h"
-
+#include <curses.h>
+#include <string.h>
 /*
  * Define constants for how big the shared queue should be and how
  * much total work the produceers and consumers should perform
@@ -22,12 +23,21 @@
 #define CONSUMER_CPU   25
 #define CONSUMER_BLOCK 10
 
+static const char *const MENU_OPTION_FIRST_ENTER = "Enter number of Producers and Consumers";
+static const char *const MENU_OPTION_SECOND_QUIT = "Exit from the program";
+static const char *const FAIL_ALERT_MESSAGE = "Colors are not available in terminal";
 
+WINDOW *initMenuDialog(const char *header);
 void *produceElement(void*);
 void *consumeElement(void*);
 
-
 int main (int argc, char *argv[]) {
+
+    int inputChoice;
+    int highlighted = 0;
+
+    char header[] = "MENU FOR CONS&PROS";
+
     pthread_t *consumerThread;
     int numberOfConsumers;
     int *consumerCounter;
@@ -40,104 +50,182 @@ int main (int argc, char *argv[]) {
     int numberOfProducers;
 
     Process *threadArguments;
+//
+//    //Input numbers for consumers and producers
+//    std::cout << "Number of producers?" << std::endl;
+//    std::cin >> numberOfProducers;
+//    std::cout << "Number of consumers?" << std::endl;
+//    std::cin >> numberOfConsumers;
 
-    //Input numbers for consumers and producers
-    std::cout << "Number of producers?" << std::endl;
-    std::cin >> numberOfProducers;
-    std::cout << "Number of consumers?" << std::endl;
-    std::cin >> numberOfConsumers;
-
-    if (numberOfConsumers < 1 || numberOfProducers < 1) {
-        fprintf(stderr, "Something wrong, Number of cons or pros less than 1");
-        exit(1);
-    }
-
-    /*
-     * Create the shared queue
-     */
-    queueStructure = queueStructure->create();
-    if (queueStructure == NULL) {
-        fprintf(stderr, "main: Queue Init failed.\n");
-        exit(1);
-    }
+    WINDOW *inputWindow = initMenuDialog(header);
 
 
-    /**
-    *Counters for how many items were produced/consumed shared for all workers
-     */
-    consumerCounter = (int*) malloc(sizeof(int));
-    producerCounter = (int*) malloc(sizeof(int));
+    const char *menuOption[] = {
+            MENU_OPTION_FIRST_ENTER,
+            MENU_OPTION_SECOND_QUIT,
+    };
 
-    /*
-     * Create arrays of thread structures, one for each producer and
-     * consumer
-     */
-    producerThread = (pthread_t *) malloc(sizeof(pthread_t) * numberOfProducers);
-    if (producerThread == NULL) {
-        fprintf(stderr, "pros\n");
-        exit(1);
-    }
-
-    consumerThread = (pthread_t *) malloc(sizeof(pthread_t) * numberOfConsumers);
-    if (consumerThread == NULL) {
-        fprintf(stderr, "cons\n");
-        exit(1);
-    }
-
-    /*
-     * Create the specified number of producers
-     */
-    for (i = 1; i <= numberOfProducers; i++) {
-
-        threadArguments = (Process *) malloc(sizeof(Process));
-
-        threadArguments->setQueue(queueStructure);
-        if (threadArguments->getQueue() == NULL) {
-            fprintf(stderr, "Something wrong, Setting queue for thread not success");
+    while (1) {
+        for (i = 0; i < 2; i++) {
+            if (i == highlighted)
+                wattron(inputWindow, A_REVERSE);
+            mvwprintw(inputWindow, i + 1, 1, menuOption[i]);
+            if (i == highlighted)
+                wattroff(inputWindow, A_REVERSE);
         }
 
-        threadArguments->setThreadCounter(producerCounter);
-        threadArguments->setProcessID(i);
-        pthread_create(&producerThread[i], NULL, produceElement, threadArguments);
+        inputChoice = wgetch(inputWindow);
+
+        switch (inputChoice) {
+            case KEY_UP:
+                highlighted--;
+                if (highlighted < 0) highlighted = 0;
+                break;
+            case KEY_DOWN:
+                highlighted++;
+                if (highlighted > 1) highlighted = 1;
+                break;
+            default:
+                break;
+        }
+
+        if (inputChoice == 10) break;
     }
 
-    /*
-     * Create the specified number of consumers
-     */
-    for (i = 1; i <= numberOfConsumers; i++) {
+    if(menuOption[highlighted] == MENU_OPTION_SECOND_QUIT) {
+    printw("\nYour choice was:%s\n", menuOption[highlighted]);
+    refresh();
+
+    /* Wait for user to press enter to exit */
+    getch();
+    /* Need to cleanup before exit */
+    endwin();
+
+    } else if (menuOption[highlighted] == MENU_OPTION_FIRST_ENTER) {
+
+
+//    if (numberOfConsumers < 1 || numberOfProducers < 1) {
+//        fprintf(stderr, "Something wrong, Number of cons or pros less than 1");
+//        exit(1);
+//    }
+
         /*
-         * Allocate space for next consumer's args
+         * Create the shared queue
          */
-        threadArguments = (Process *) malloc(sizeof(Process));
-        if (threadArguments == NULL) {
-            fprintf(stderr, "main: Thread_Args Init failed.\n");
+        queueStructure = queueStructure->create();
+        if (queueStructure == NULL) {
+            fprintf(stderr, "main: Queue Init failed.\n");
+            exit(1);
+        }
+
+
+        /**
+        *Counters for how many items were produced/consumed shared for all workers
+         */
+        consumerCounter = (int *) malloc(sizeof(int));
+        producerCounter = (int *) malloc(sizeof(int));
+
+        /*
+         * Create arrays of thread structures, one for each producer and
+         * consumer
+         */
+        producerThread = (pthread_t *) malloc(sizeof(pthread_t) * numberOfProducers);
+        if (producerThread == NULL) {
+            fprintf(stderr, "pros\n");
+            exit(1);
+        }
+
+        consumerThread = (pthread_t *) malloc(sizeof(pthread_t) * numberOfConsumers);
+        if (consumerThread == NULL) {
+            fprintf(stderr, "cons\n");
             exit(1);
         }
 
         /*
-         * Fill them in and create the thread
+         * Create the specified number of producers
          */
-        threadArguments->setQueue(queueStructure);
-        threadArguments->setThreadCounter(consumerCounter);
-        threadArguments->setProcessID(i);
-        pthread_create(&consumerThread[i], NULL, consumeElement, threadArguments);
-    }
+        for (i = 1; i <= numberOfProducers; i++) {
 
-    /*
-     The pthread_join() function suspends execution of the calling thread until the
-     target thread terminates, unless the target thread has already terminated
-     int pthread_join(pthread_t thread, void **value_ptr);
-     */
-    for (int i = 0; i < numberOfProducers; i++) {
-        pthread_join(producerThread[i], NULL);
-    }
-    for (int j = 0; j < numberOfConsumers; j++) {
-    pthread_join(consumerThread[j], NULL);
-    }
+            threadArguments = (Process *) malloc(sizeof(Process));
 
-    queueStructure->deleteAndFreeSpace();
+            threadArguments->setQueue(queueStructure);
+            if (threadArguments->getQueue() == NULL) {
+                fprintf(stderr, "Something wrong, Setting queue for thread not success");
+            }
+
+            threadArguments->setThreadCounter(producerCounter);
+            threadArguments->setProcessID(i);
+            pthread_create(&producerThread[i], NULL, produceElement, threadArguments);
+        }
+
+        /*
+         * Create the specified number of consumers
+         */
+        for (i = 1; i <= numberOfConsumers; i++) {
+            /*
+             * Allocate space for next consumer's args
+             */
+            threadArguments = (Process *) malloc(sizeof(Process));
+            if (threadArguments == NULL) {
+                fprintf(stderr, "main: Thread_Args Init failed.\n");
+                exit(1);
+            }
+
+            /*
+             * Fill them in and create the thread
+             */
+            threadArguments->setQueue(queueStructure);
+            threadArguments->setThreadCounter(consumerCounter);
+            threadArguments->setProcessID(i);
+            pthread_create(&consumerThread[i], NULL, consumeElement, threadArguments);
+        }
+
+        /*
+         The pthread_join() function suspends execution of the calling thread until the
+         target thread terminates, unless the target thread has already terminated
+         int pthread_join(pthread_t thread, void **value_ptr);
+         */
+        for (int i = 0; i < numberOfProducers; i++) {
+            pthread_join(producerThread[i], NULL);
+        }
+        for (int j = 0; j < numberOfConsumers; j++) {
+            pthread_join(consumerThread[j], NULL);
+        }
+
+        queueStructure->deleteAndFreeSpace();
+    }
 
     return 0;
+}
+
+WINDOW *initMenuDialog(const char *header) {
+    int widthOfTerminal, lengthOfTerminal;
+
+    initscr(); //Inizjalizacja całości ncurses, kolory itp
+    raw();
+    noecho();
+    keypad(stdscr, TRUE);
+
+
+    getmaxyx(stdscr, widthOfTerminal, lengthOfTerminal);
+    /**Terminal on main area**/
+    move(widthOfTerminal / 2, (lengthOfTerminal - strlen(header)) / 2);
+    printw(header);
+    refresh();
+
+    WINDOW *inputWindow = newwin(7, lengthOfTerminal - 12, widthOfTerminal - 9, 6);
+    box(inputWindow, 0, 0);
+    refresh();
+    wrefresh(inputWindow);
+
+    if (has_colors() == false || start_color() != OK) {
+        endwin();
+        puts(FAIL_ALERT_MESSAGE);
+        exit(EXIT_FAILURE);
+    }
+
+    keypad(inputWindow, TRUE);
+    return inputWindow;
 }
 
 void *produceElement (void *producerArg)
