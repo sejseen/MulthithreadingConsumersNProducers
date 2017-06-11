@@ -1,17 +1,17 @@
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <iostream>
 #include "WorkerService.h"
 #include "QueueStructure.h"
 #include "Process.h"
 #include <curses.h>
 #include <string.h>
+#include <zconf.h>
 /*
  * Define constants for how big the shared queue should be and how
  * much total work the produceers and consumers should perform
  */
-#define ITEM_TO_PRODUCE_AND_CONSUME 30
+#define ITEM_TO_PRODUCE_AND_CONSUME 10
 
 /*
  * These constants specify how much CPU bound work the producer and
@@ -23,11 +23,12 @@
 #define CONSUMER_CPU   25
 #define CONSUMER_BLOCK 10
 
-static const char *const MENU_OPTION_FIRST_ENTER = "Enter number of Producers and Consumers";
-static const char *const MENU_OPTION_SECOND_QUIT = "Exit from the program";
-static const char *const FAIL_ALERT_MESSAGE = "Colors are not available in terminal";
+static const char *const MENU_OPTION_FIRST_ENTER = "Enter number of Producers and Consumers\n";
+static const char *const MENU_OPTION_SECOND_QUIT = "Exit from the program\n";
+static const char *const FAIL_ALERT_MESSAGE = "Colors are not available in terminal\n";
 
 WINDOW *initMenuDialog(const char *header);
+void closeGui();
 void *produceElement(void*);
 void *consumeElement(void*);
 
@@ -39,7 +40,7 @@ int main (int argc, char *argv[]) {
     char header[] = "MENU FOR CONS&PROS";
 
     pthread_t *consumerThread;
-    int numberOfConsumers;
+    int numberOfConsumers = atoi(argv[1]);
     int *consumerCounter;
 
     QueueStructure *queueStructure;
@@ -47,18 +48,11 @@ int main (int argc, char *argv[]) {
 
     pthread_t *producerThread;
     int *producerCounter;
-    int numberOfProducers;
+    int numberOfProducers = atoi(argv[2]);
 
     Process *threadArguments;
-//
-//    //Input numbers for consumers and producers
-//    std::cout << "Number of producers?" << std::endl;
-//    std::cin >> numberOfProducers;
-//    std::cout << "Number of consumers?" << std::endl;
-//    std::cin >> numberOfConsumers;
 
     WINDOW *inputWindow = initMenuDialog(header);
-
 
     const char *menuOption[] = {
             MENU_OPTION_FIRST_ENTER,
@@ -97,17 +91,16 @@ int main (int argc, char *argv[]) {
     refresh();
 
     /* Wait for user to press enter to exit */
-    getch();
-    /* Need to cleanup before exit */
-    endwin();
+    closeGui();
 
     } else if (menuOption[highlighted] == MENU_OPTION_FIRST_ENTER) {
 
+        endwin();
 
-//    if (numberOfConsumers < 1 || numberOfProducers < 1) {
-//        fprintf(stderr, "Something wrong, Number of cons or pros less than 1");
-//        exit(1);
-//    }
+    if (numberOfConsumers < 1 || numberOfProducers < 1) {
+        fprintf(stderr, "Something wrong, Number of cons or pros less than 1");
+        exit(1);
+    }
 
         /*
          * Create the shared queue
@@ -191,8 +184,8 @@ int main (int argc, char *argv[]) {
         for (int j = 0; j < numberOfConsumers; j++) {
             pthread_join(consumerThread[j], NULL);
         }
-
         queueStructure->deleteAndFreeSpace();
+
     }
 
     return 0;
@@ -260,7 +253,8 @@ void *produceElement (void *producerArg)
 
             pthread_cond_wait(fifoQueue->isNotFull,fifoQueue->mutex);
 
-            printf ("No place to produce anything, PRODUCER_%d waitin'\n", individualId);
+            printf("No place to produce anything, PRODUCER_%d waitin'\n", individualId);
+            sleep(2);
         }
 
         /*
@@ -289,10 +283,11 @@ void *produceElement (void *producerArg)
          * Announce the production outside the critical section
          */
         printf("Announce produced item: %d by PRODUCER_%d.\n", currentProducedData, individualId);
-
+        sleep(2);
     }
 
     printf("Nothing to do for me PRODUCER_%d:  See ya\n", individualId);
+    sleep(2);
     return (NULL);
 }
 
@@ -318,9 +313,9 @@ void *consumeElement (void *consumerArg)
          */
         pthread_mutex_lock(fifoQueue->mutex );
         while (fifoQueue->isEmpty && *summaryConsume != ITEM_TO_PRODUCE_AND_CONSUME) {
-            printf ("Queue is empty, consumer %d just waitin' :  EMPTY QUEUE.\n", individualId);
+            printf("Queue is empty, consumer %d just waitin' :  EMPTY QUEUE.\n", individualId);
             pthread_cond_wait(fifoQueue->isNotEmpty,fifoQueue->mutex);
-
+            sleep(2);
         }
 
         /*
@@ -349,10 +344,16 @@ void *consumeElement (void *consumerArg)
          * obtained from the queue and then announce its consumption.
          */
         workerService.simulateWork(CONSUMER_CPU,CONSUMER_BLOCK);
-        printf ("Announce consuming item: %d by CONSUMER_%d.\n",currentConsumedData, individualId);
-
+        printf("Announce consuming item: %d by CONSUMER_%d.\n",currentConsumedData, individualId);
+        sleep(2);
     }
 
     printf("Damn nothing to eat. I'm out! CONSUMER_%d \n", individualId);
+    sleep(2);
     return (NULL);
+}
+
+void closeGui() {
+    getch();
+    endwin();
 }

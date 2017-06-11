@@ -5,6 +5,7 @@
 #include <time.h>
 #include <cstdio>
 #include <iostream>
+#include <curses.h>
 #include "WorkerService.h"
 
 /**
@@ -48,6 +49,6 @@ void WorkerService::simulateWork(int numberOfCPUiterations, int timeForBlock) {
     if(timeForBlock > 0) {
         sleep(timeForBlock);
     } else {
-        std::cout<<"What the fuc* your sleppin param is?"<<std::endl;
+        printf("What the fuc* your sleppin param is?\n");
     }
 }
