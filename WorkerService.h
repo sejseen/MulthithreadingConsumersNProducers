@@ -11,6 +11,7 @@ struct WorkerService {
 
     void sleep(unsigned int miliSecunds);
     void simulateWork(int numberOfCPUiterations, int timeForBlock);
+    void savingDataToFile(const char *filePath, const char *data);
 };
 
 #endif //MULTHITHREADINGCONSUMERSNPRODUCERS_WORKERSERVICE_H

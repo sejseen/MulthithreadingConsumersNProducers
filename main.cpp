@@ -27,8 +27,16 @@ static const char *const MENU_OPTION_FIRST_ENTER = "Enter number of Producers an
 static const char *const MENU_OPTION_SECOND_QUIT = "Exit from the program\n";
 static const char *const FAIL_ALERT_MESSAGE = "Colors are not available in terminal\n";
 
+/*Static constant for path of saved content*/
+static const char *const pathForProducersContent = "producerData.txt";
+/*Static constant for path of saved content*/
+static const char *const pathForConsumersContent = "consumerData.txt";
+
+/*GUI open Method*/
 WINDOW *initMenuDialog(const char *header);
+/*GUI close Method*/
 void closeGui();
+
 void *produceElement(void*);
 void *consumeElement(void*);
 
@@ -243,13 +251,14 @@ void *produceElement (void *producerArg)
          * section, announce that we produced it.
          */
         workerService.simulateWork(PRODUCER_CPU, PRODUCER_BLOCK);
+        workerService.savingDataToFile(pathForProducersContent, "produceSth\n");
 
         /*
          * If the queue is full, we have no place to put anything we
          * produce, so wait until it is not full.
          */
         pthread_mutex_lock(fifoQueue->mutex );
-        while (fifoQueue->isFull && *summaryProduced != ITEM_TO_PRODUCE_AND_CONSUME) {
+        while (fifoQueue->isFull && *summaryProduced < ITEM_TO_PRODUCE_AND_CONSUME) {
 
             pthread_cond_wait(fifoQueue->isNotFull,fifoQueue->mutex);
 
@@ -282,8 +291,9 @@ void *produceElement (void *producerArg)
         /*
          * Announce the production outside the critical section
          */
-        printf("Announce produced item: %d by PRODUCER_%d.\n", currentProducedData, individualId);
         sleep(2);
+        printf("Announce produced item: %d by PRODUCER_%d.\n", currentProducedData, individualId);
+
     }
 
     printf("Nothing to do for me PRODUCER_%d:  See ya\n", individualId);
@@ -344,6 +354,9 @@ void *consumeElement (void *consumerArg)
          * obtained from the queue and then announce its consumption.
          */
         workerService.simulateWork(CONSUMER_CPU,CONSUMER_BLOCK);
+//        workerService.savingDataToFile(pathForConsumersContent,
+//                "Customer service with client nr:[" + currentConsumedData + "]");
+
         printf("Announce consuming item: %d by CONSUMER_%d.\n",currentConsumedData, individualId);
         sleep(2);
     }
@@ -354,6 +367,15 @@ void *consumeElement (void *consumerArg)
 }
 
 void closeGui() {
+    clear();
+    mvprintw(4, 50,"SYSTEMY OPERACYJNE 2 - Projekt");
+    mvprintw(6, 50,"Symulacja pracy konsumentów oraz producentów");
+    mvprintw(12, 50,"Autor: Konrad Tyma");
+    mvprintw(13, 50,"Numer indeksu: 218700");
+    mvprintw(16, 50,"Prowadzacy inz. mgr Szymon Datko");
+    mvprintw(19, 50,"");
+    refresh();
+
     getch();
     endwin();
 }

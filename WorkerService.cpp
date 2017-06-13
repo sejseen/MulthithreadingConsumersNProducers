@@ -52,3 +52,11 @@ void WorkerService::simulateWork(int numberOfCPUiterations, int timeForBlock) {
         printf("What the fuc* your sleppin param is?\n");
     }
 }
+
+void WorkerService::savingDataToFile(const char *filePath, const char *data) {
+    FILE *fp = fopen(filePath, "ab");
+    if(fp != NULL) {
+        fputs(data, fp);
+        fclose(fp);
+    }
+}
