@@ -19,13 +19,14 @@
  * blocks when producing an item.
  */
 #define PRODUCER_CPU   25
-#define PRODUCER_BLOCK 10
+#define PRODUCER_BLOCK 5000
 #define CONSUMER_CPU   25
-#define CONSUMER_BLOCK 10
+#define CONSUMER_BLOCK 5000
 
-static const char *const MENU_OPTION_FIRST_ENTER = "Enter number of Producers and Consumers\n";
+static const char *const MENU_OPTION_FIRST_ENTER = "Start multithreading program\n";
 static const char *const MENU_OPTION_SECOND_QUIT = "Exit from the program\n";
 static const char *const FAIL_ALERT_MESSAGE = "Colors are not available in terminal\n";
+static const char *const HEADER_TOP_MENU = "\n\t\t\t\t\t\t\tMENU FOR CONS&PROS";
 
 /*Static constant for path of saved content*/
 static const char *const pathForProducersContent = "producerData.txt";
@@ -45,7 +46,40 @@ int main (int argc, char *argv[]) {
     int inputChoice;
     int highlighted = 0;
 
-    char header[] = "MENU FOR CONS&PROS";
+    char image[] = "\t\t\t\t\t\t\t______________¶¶¶\n"
+            "\t\t\t\t\t\t\t_____________¶¶_¶¶¶¶\n"
+            "\t\t\t\t\t\t\t____________¶¶____¶¶¶\n"
+            "\t\t\t\t\t\t\t___________¶¶¶______¶¶\n"
+            "\t\t\t\t\t\t\t___________¶¶¶_______¶¶\n"
+            "\t\t\t\t\t\t\t__________¶¶¶¶________¶¶\n"
+            "\t\t\t\t\t\t\t__________¶_¶¶_________¶¶\n"
+            "\t\t\t\t\t\t\t__________¶__¶¶_________¶¶____¶¶\n"
+            "\t\t\t\t\t\t\t__________¶__¶¶__________¶¶¶¶¶¶¶\n"
+            "\t\t\t\t\t\t\t_________¶¶__¶¶¶______¶¶¶¶¶¶___¶\n"
+            "\t\t\t\t\t\t\t_________¶¶___¶¶__¶¶¶¶¶¶__¶¶\n"
+            "\t\t\t\t\t\t\t_______¶¶_¶____¶¶¶¶________¶¶\n"
+            "\t\t\t\t\t\t\t______¶¶__¶¶___¶¶__________¶¶\n"
+            "\t\t\t\t\t\t\t_____¶¶____¶¶___¶¶__________¶¶\n"
+            "\t\t\t\t\t\t\t___¶¶_______¶¶___¶¶_________¶¶\n"
+            "\t\t\t\t\t\t\t___¶¶¶¶¶¶¶¶¶¶¶¶¶__¶¶_________¶\n"
+            "\t\t\t\t\t\t\t_¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶_¶¶________¶¶\n"
+            "\t\t\t\t\t\t\t¶¶__¶¶¶¶¶¶____¶¶¶¶¶¶¶¶¶______¶¶\n"
+            "\t\t\t\t\t\t\t¶¶¶¶¶___¶______¶___¶¶¶¶¶_____¶¶\n"
+            "\t\t\t\t\t\t\t________¶¶¶¶¶¶¶¶______¶¶¶¶¶_¶¶\n"
+            "\t\t\t\t\t\t\t______¶¶¶¶¶¶¶¶¶¶¶________¶¶¶¶\n"
+            "\t\t\t\t\t\t\t______¶¶¶¶¶¶¶¶¶¶¶¶\n"
+            "\t\t\t\t\t\t\t______¶__¶¶_¶¶¶¶¶¶\n"
+            "\t\t\t\t\t\t\t_____¶¶______¶___¶\n"
+            "\t\t\t\t\t\t\t_____¶¶_____¶¶___¶\n"
+            "\t\t\t\t\t\t\t_____¶______¶¶___¶\n"
+            "\t\t\t\t\t\t\t____¶¶______¶¶___¶¶\n"
+            "\t\t\t\t\t\t\t____¶¶______¶¶___¶¶\n"
+            "\t\t\t\t\t\t\t___¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶\n"
+            "\t\t\t\t\t\t\t__¶¶¶¶¶¶¶¶¶_¶¶¶¶¶¶¶¶\n"
+            "\t\t\t\t\t\t\t__¶¶________¶¶¶____¶¶\n"
+            "\t\t\t\t\t\t\t____¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶¶\n";
+
+    //Get args
 
     pthread_t *consumerThread;
     int numberOfConsumers = atoi(argv[1]);
@@ -60,7 +94,7 @@ int main (int argc, char *argv[]) {
 
     Process *threadArguments;
 
-    WINDOW *inputWindow = initMenuDialog(header);
+    WINDOW *inputWindow = initMenuDialog(image);
 
     const char *menuOption[] = {
             MENU_OPTION_FIRST_ENTER,
@@ -103,7 +137,15 @@ int main (int argc, char *argv[]) {
 
     } else if (menuOption[highlighted] == MENU_OPTION_FIRST_ENTER) {
 
-        endwin();
+        //For present an ncurses bug with threads, doesnt printing from more than 2 threads
+//        wclear(inputWindow);
+//        clear();
+//
+//        scrollok(stdscr,TRUE);
+//        attron( A_BOLD );
+//
+//        refresh();
+    endwin();
 
     if (numberOfConsumers < 1 || numberOfProducers < 1) {
         fprintf(stderr, "Something wrong, Number of cons or pros less than 1");
@@ -192,8 +234,8 @@ int main (int argc, char *argv[]) {
         for (int j = 0; j < numberOfConsumers; j++) {
             pthread_join(consumerThread[j], NULL);
         }
-        queueStructure->deleteAndFreeSpace();
 
+        queueStructure->deleteAndFreeSpace();
     }
 
     return 0;
@@ -206,16 +248,26 @@ WINDOW *initMenuDialog(const char *header) {
     raw();
     noecho();
     keypad(stdscr, TRUE);
+    attron( A_BOLD );
+    start_color();
+    init_pair(1,COLOR_GREEN, COLOR_BLACK);
 
 
     getmaxyx(stdscr, widthOfTerminal, lengthOfTerminal);
     /**Terminal on main area**/
     move(widthOfTerminal / 2, (lengthOfTerminal - strlen(header)) / 2);
-    printw(header);
-    refresh();
 
     WINDOW *inputWindow = newwin(7, lengthOfTerminal - 12, widthOfTerminal - 9, 6);
     box(inputWindow, 0, 0);
+
+    printw(header);
+    refresh();
+
+    attron(COLOR_PAIR(1));
+    mvprintw(32, 30,HEADER_TOP_MENU);
+    attroff(COLOR_PAIR(1));
+    refresh();
+
     refresh();
     wrefresh(inputWindow);
 
@@ -263,7 +315,6 @@ void *produceElement (void *producerArg)
             pthread_cond_wait(fifoQueue->isNotFull,fifoQueue->mutex);
 
             printf("No place to produce anything, PRODUCER_%d waitin'\n", individualId);
-            sleep(2);
         }
 
         /*
@@ -277,11 +328,9 @@ void *produceElement (void *producerArg)
 
         /*
          * OK, so we produce an item. Increment the counter of total
-         * widgets produced, and add the new widget ID, its number, to the
+         * produced, and add the new ID, its number, to the
          * queue.
          */
-
-
         currentProducedData = (*summaryProduced)++;
         fifoQueue->addData(currentProducedData);
         pthread_mutex_unlock(fifoQueue->mutex );
@@ -291,13 +340,11 @@ void *produceElement (void *producerArg)
         /*
          * Announce the production outside the critical section
          */
-        sleep(2);
         printf("Announce produced item: %d by PRODUCER_%d.\n", currentProducedData, individualId);
-
     }
 
     printf("Nothing to do for me PRODUCER_%d:  See ya\n", individualId);
-    sleep(2);
+
     return (NULL);
 }
 
@@ -322,10 +369,9 @@ void *consumeElement (void *consumerArg)
          * si not empty.
          */
         pthread_mutex_lock(fifoQueue->mutex );
-        while (fifoQueue->isEmpty && *summaryConsume != ITEM_TO_PRODUCE_AND_CONSUME) {
+        while (fifoQueue->isEmpty && *summaryConsume <= ITEM_TO_PRODUCE_AND_CONSUME) {
             printf("Queue is empty, consumer %d just waitin' :  EMPTY QUEUE.\n", individualId);
             pthread_cond_wait(fifoQueue->isNotEmpty,fifoQueue->mutex);
-            sleep(2);
         }
 
         /*
@@ -335,14 +381,10 @@ void *consumeElement (void *consumerArg)
             pthread_mutex_unlock(fifoQueue->mutex);
             break;
         }
-
         /*
          * Remove the next item from the queue. Increment the count of the
-         * total consumed. Note that item_consumed is a local copy so this
-         * thread can retain a memory of which item it consumed even if
-         * others are busy consuming them.
+         * total consumed.
          */
-
         fifoQueue->removeData(&currentConsumedData);
         (*summaryConsume)++;
         pthread_mutex_unlock(fifoQueue->mutex );
@@ -354,26 +396,28 @@ void *consumeElement (void *consumerArg)
          * obtained from the queue and then announce its consumption.
          */
         workerService.simulateWork(CONSUMER_CPU,CONSUMER_BLOCK);
-//        workerService.savingDataToFile(pathForConsumersContent,
-//                "Customer service with client nr:[" + currentConsumedData + "]");
 
         printf("Announce consuming item: %d by CONSUMER_%d.\n",currentConsumedData, individualId);
-        sleep(2);
+
     }
 
     printf("Damn nothing to eat. I'm out! CONSUMER_%d \n", individualId);
-    sleep(2);
     return (NULL);
 }
 
 void closeGui() {
     clear();
+    attron( A_BOLD );
+    start_color();
+    init_pair(1, COLOR_GREEN, COLOR_BLACK);
+    attron(COLOR_PAIR(1));
     mvprintw(4, 50,"SYSTEMY OPERACYJNE 2 - Projekt");
     mvprintw(6, 50,"Symulacja pracy konsumentów oraz producentów");
     mvprintw(12, 50,"Autor: Konrad Tyma");
     mvprintw(13, 50,"Numer indeksu: 218700");
     mvprintw(16, 50,"Prowadzacy inz. mgr Szymon Datko");
     mvprintw(19, 50,"");
+    attroff(COLOR_PAIR(1));
     refresh();
 
     getch();
